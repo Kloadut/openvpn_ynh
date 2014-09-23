@@ -5,6 +5,7 @@
     "en": "Your Secure and Private Tunnel to the Internet",
     "fr": "Votre tunnel privé et sécurisé vers Internet"
   },
+  "licence": "GNU GPL",
   "developer": {
     "name": "kload",
     "email": "kload@kload.fr",
