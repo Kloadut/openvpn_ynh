@@ -93,3 +93,4 @@ fi
 # Let's go !
 sudo service nginx reload
 sudo service openvpn start
+sudo chkconfig openvpn on
