@@ -64,8 +64,8 @@
                     "fr": "Si vous avez plusieurs IPv4 publiques et que vous voulez fournir des VPN compatibles pour l'auto-h\\00e9bergement (VPN associ\\00e9 \\00e0 une adresse IP publique), listez ici plages d'adresses IPv4 \\00e0 attribuer aux clients VPN (s\\00e9par\\00e9 par des espaces)"
                 },
                 "example": "169.254.10.25 169.254.10.32 169.254.11.0/29",
-                "default": "",
-                "optional": true
+                "default": "169.254.11.0/29",
+                "optional": false
             }
         ]
     }
