@@ -5,7 +5,7 @@
   "version": "2.3.4-3",
   "description": {
     "en": "A server providing Secure and Private Tunnel to the Internet",
-    "fr": "Un service permettant de fournir des tunnel privé et sécurisé vers Internet"
+    "fr": "Un service permettant de fournir des tunnel priv\\00e9 et s\\00e9curis\\00e9 vers Internet"
   },
   "requirements": {
       "yunohost": ">= 2.4"
@@ -50,7 +50,7 @@
                 "type": "string",
                 "ask": {
                     "en": "If your server has an other public ip than the main one, you can use it to make openvpn listen on all ports. It could be useful with some crazy/blocked internet access. Leave empty if it's not needed",
-                    "fr": "Si votre server a une autre ip publique que la principale, vous pouvez l'utiliser pour qu'openvpn écoute sur tous les ports. Ce peut être utile avec certains accès internet sale/bloqué. Laissez vide si ce n'est pas nécessaire"
+                    "fr": "Si votre server a une autre ip publique que la principale, vous pouvez l'utiliser pour qu'openvpn \\00e9coute sur tous les ports. Ce peut \\00eatre utile avec certains acc\\00e8s internet sale/bloqu\\00e9. Laissez vide si ce n'est pas n\\00e9cessaire"
                 },
                 "example": "169.254.10.1",
                 "default": "",
@@ -61,11 +61,11 @@
                 "type": "string",
                 "ask": {
                     "en": "If you have several public IPv4 and you want to provide VPN compatibles for self-hosting (VPN associated to a public IP address), list here public IPv4 range to attribute to VPN clients (seperated by space)",
-                    "fr": "Si vous avez plusieurs IPv4 publiques et que vous voulez fournir des VPN compatibles pour l'auto-hébergement (VPN associé à une adresse IP publique), listez ici plages d'adresses IPv4 à attribuer aux clients VPN (séparé par des espaces)"
+                    "fr": "Si vous avez plusieurs IPv4 publiques et que vous voulez fournir des VPN compatibles pour l'auto-h\\00e9bergement (VPN associ\\00e9 \\00e0 une adresse IP publique), listez ici plages d'adresses IPv4 \\00e0 attribuer aux clients VPN (s\\00e9par\\00e9 par des espaces)"
                 },
                 "example": "169.254.10.25 169.254.10.32 169.254.11.0/29",
-                "default": "",
-                "optional": true
+                "default": "169.254.11.0/29",
+                "optional": false
             }
         ]
     }
