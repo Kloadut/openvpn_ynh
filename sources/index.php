@@ -31,7 +31,6 @@
     <section class="documentation">
         <h1>Documentation</h1>
         <ul>
-            <li><a href="https://yunohost.org/app_openvpn" target="_blank">Documentation on YunoHost.org</a></li>
             <li><a href="https://openvpn.net" target="_blank">OpenVPN official website</a></li>
             <li><a href="https://en.wikipedia.org/wiki/OpenVPN" target="_blank">Wikipedia page</a></li>
         </ul>

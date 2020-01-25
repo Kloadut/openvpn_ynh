@@ -1,7 +1,7 @@
 # GENERAL
 ; Drop privileges
-user openvpn
-group openvpn
+user vpnserver
+group vpnserver
 
 ; Don't re-read keys at ping-restart (because of dropped privileges)
 persist-key
@@ -20,25 +20,21 @@ max-clients 30
 # TLS
 tls-server
 
-ca   /etc/yunohost/certs/{{ domain }}/ca.pem
-cert /etc/yunohost/certs/{{ domain }}/crt.pem
-key  /etc/yunohost/certs/{{ domain }}/key.pem
-dh   /etc/yunohost/certs/{{ domain }}/dh.pem
-; When a client connects, check its certificate hasn't been revoked.
-; Must be accessible without root privileges
-crl-verify /etc/openvpn/crl.pem
+ca   {{ base_cert_path }}/ca.pem
+cert {{ base_cert_path }}/crt.pem
+key  {{ base_cert_path }}/key.pem
+dh   /etc/openvpn/dh.pem
 
 ; Certificates from the clients must have a field guaranteeing they really are client certificates
 remote-cert-tls client
 
 tls-version-min 1.2
-tls-auth /etc/openvpn/ta.key 0
 cipher AES-256-CBC
 auth SHA512
 tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:TLS-DHE-RSA-WITH-AES-256-CBC-SHA:TLS-DHE-RSA-WITH-CAMELLIA-256-CBC-SHA:TLS-DHE-RSA-WITH-AES-128-CBC-SHA:TLS-DHE-RSA-WITH-CAMELLIA-128-CBC-SHA
 
 ; Clients don't need a certificate to connect (just ldap password)
-client-cert-not-required
+verify-client-cert none
 plugin /usr/lib/openvpn/openvpn-auth-ldap.so /etc/openvpn/auth/ldap.conf
 
 # NETWORK
@@ -95,6 +91,6 @@ log-append  /var/log/openvpn/server.log
 
 proto udp
 ; LES DEUX OPTIONS SUIVANTES FONCTIONNENT SEULEMENT AVEC UDP
-; Pour contrer les encapsulations (ADSL, ...) et l'absence de découverte de MTU
-;fragment 1300 
+; Pour contrer les encapsulations (ADSL, ...) et l'absence de decouverte de MTU
+;fragment 1300
 ;mssfix

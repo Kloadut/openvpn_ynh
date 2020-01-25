@@ -2,13 +2,13 @@
   "name": "VPN server",
   "id": "vpnserver",
   "packaging_format": 1,
-  "version": "2.3.4-3",
+  "version": "2.4",
   "description": {
     "en": "A server providing Secure and Private Tunnel to the Internet",
     "fr": "Un service permettant de fournir des tunnel privé et sécurisé vers Internet"
   },
   "requirements": {
-      "yunohost": ">= 2.4"
+      "yunohost": ">= 3.6.0"
   },
   "license": "GPL-2.0",
   "url": "http://openvpn.net",
@@ -20,8 +20,7 @@
   "multi_instance": false,
   "services": [
       "nginx",
-      "php5-fpm",
-      "slapd",
+      "php7.0-fpm",
       "openvpn"
   ],
   "arguments": {
@@ -42,8 +41,8 @@
                     "en": "Choose a path for OpenVPN",
                     "fr": "Choisissez un chemin pour OpenVPN"
                 },
-                "example": "/openvpn",
-                "default": "/openvpn"
+                "example": "/vpnserver",
+                "default": "/vpnserver"
             },
             {
                 "name": "dedicated_ip",

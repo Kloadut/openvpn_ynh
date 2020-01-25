@@ -1,36 +1,179 @@
 #!/bin/bash
+
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
 source /usr/share/yunohost/helpers
 source ../settings/scripts/_common.sh
 
-ynh_trap_on
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
 
-export app=$YNH_APP_INSTANCE_NAME
-export user=$app
-export webuser="${user}web"
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
 
-export domain=$(ynh_app_setting_get $app domain)
-export path=$(ynh_app_setting_get $app path)
-export local_path=$(ynh_app_setting_get $app local_path)
-export iface=$(ynh_app_setting_get $app iface)
-export port=$(ynh_app_setting_get $app port)
-export ip4ranges=$(ynh_app_setting_get $app ip4ranges)
-export dynamic_ip=$(ynh_app_setting_get $app dynamic_ip)
+#=================================================
+# LOAD SETTINGS
+#=================================================
+ynh_script_progression --message="Loading installation settings..." --time --weight=1
+
+app=$YNH_APP_INSTANCE_NAME
+user=$app
+webuser="${user}web"
+
+domain=$(ynh_app_setting_get $app domain)
+path_url=$(ynh_app_setting_get $app path)
+final_path=$(ynh_app_setting_get $app final_path)
+iface=$(ynh_app_setting_get $app iface)
+port=$(ynh_app_setting_get $app port)
+ip4ranges=$(ynh_app_setting_get $app ip4ranges)
+dedicated_ip=$(ynh_app_setting_get $app dedicated_ip)
 
 #=================================================
 # CHECK IF THE APP CAN BE RESTORED
 #=================================================
-ynh_check_restore
-check_iptables
-check_tun_available
+ynh_script_progression --message="Validating restoration parameters..." --time --weight=1
 
-#================================================= 
-# RESTORE THE APP BY MODIFYING THE SYSTEM
+ynh_webpath_available $domain $path_url \
+    || ynh_die "Path not available: ${domain}${path_url}"
+    test ! -d $final_path \
+    || ynh_die "There is already a directory: $final_path "
+
+# Check if iptables is working
+if ! iptables -L > /dev/null 2>&1
+then
+    ynh_die --message="iptables is not available in your environment, aborting..."
+fi
+
+# Ensure that tun device is still available, otherwise try to create it manually
+if [ ! -c /dev/net/tun ]
+then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 666 /dev/net/tun
+fi
+
 #=================================================
-# Install official debian package
-ynh_app_dependencies openvpn,openvpn-auth-ldap,netmask
+# STANDARD RESTORATION STEPS
+#=================================================
+# RESTORE THE NGINX CONFIGURATION
+#=================================================
 
-install_files () {
-    ynh_restore
-}
+ynh_restore_file --origin_path="/etc/nginx/conf.d/$domain.d/$app.conf"
 
-setup_and_restart
+#=================================================
+# RESTORE THE APP MAIN DIR
+#=================================================
+ynh_script_progression --message="Restoring the app main directory..." --time --weight=1
+
+ynh_restore_file --origin_path="$final_path"
+
+#=================================================
+# RECREATE THE DEDICATED USER
+#=================================================
+ynh_script_progression --message="Recreating the dedicated system user and setting sudoers..." --time --weight=1
+
+# Create a dedicated users (if not existing)
+ynh_system_user_create --username=$user --home_dir="/etc/openvpn/"
+ynh_system_user_create --username=$webuser --home_dir="$final_path"
+
+ynh_restore_file "/etc/sudoers.d/${app}_ynh"
+
+#=================================================
+# RESTORE USER RIGHTS
+#=================================================
+ynh_script_progression --message="Restoring files permissions..." --time --weight=1
+
+# Restore permissions on app files
+chown -R root: $final_path
+
+#=================================================
+# RESTORE THE PHP-FPM CONFIGURATION
+#=================================================
+
+ynh_restore_file --origin_path="/etc/php/7.0/fpm/pool.d/$app.conf"
+
+#=================================================
+# REINSTALL DEPENDENCIES
+#=================================================
+ynh_script_progression --message="Reinstalling dependencies..." --time --weight=1
+
+# Define and install dependencies
+ynh_install_app_dependencies "$pkg_dependencies"
+
+#=================================================
+# ADVERTISE SERVICE IN ADMIN PANEL
+#=================================================
+ynh_script_progression --message="Register service openvpn on admin panel..." --time --weight=1
+
+yunohost service add openvpn --description "OpenVPN server"
+
+#=================================================
+# STUFF NOT YET SORTED...
+#=================================================
+
+# Ensure that tun device is still available, otherwise try to create it manually
+if [ ! -c /dev/net/tun ]
+then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 666 /dev/net/tun
+fi
+
+# Add masquerade rules
+add_firewall_rules
+
+#=================================================
+# RESTORE THE LOGROTATE CONFIGURATION
+#=================================================
+ynh_script_progression --message="Restore logrotate configuration" --time --weight=1
+
+ynh_restore_file --origin_path="/etc/logrotate.d/$app"
+
+#=================================================
+# RESTORE SPECIFIC FILES
+#=================================================
+ynh_script_progression --message="Restore specific files..." --time --weight=1
+
+ynh_restore_file --origin_path="/etc/openvpn"
+ynh_restore_file --origin_path="/etc/sysctl.d/openvpn.conf"
+ynh_restore_file --origin_path="/var/log/openvpn"
+sysctl -p /etc/sysctl.d/openvpn.conf
+
+#=================================================
+# RESTORE FAIL2BAN CONFIGURATION
+#=================================================
+ynh_script_progression --message="Restoring the fail2ban configuration..." --time --weight=1
+
+ynh_restore_file "/etc/fail2ban/jail.d/$app.conf"
+ynh_restore_file "/etc/fail2ban/filter.d/$app.conf"
+ynh_systemd_action --action=restart --service_name=fail2ban
+
+#=================================================
+# START SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Starting systemd service openvpn.." --time --weight=1
+
+yunohost service enable openvpn
+
+# Start a systemd service
+ynh_systemd_action --service_name=openvpn --action=start
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# RELOAD NGINX AND PHP-FPM
+#=================================================
+ynh_script_progression --message="Reloading nginx web server and php-fpm..." --time --weight=1
+
+ynh_systemd_action --service_name=php7.0-fpm --action=reload
+ynh_systemd_action --service_name=nginx --action=reload
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+ynh_script_progression --message="Restoration completed for $app" --time --last
